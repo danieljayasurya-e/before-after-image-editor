@@ -23,9 +23,21 @@ export default function EditableLabel({
 
   const pillStyle = useMemo(() => {
     return {
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      maxWidth: "100%",
+      minHeight: `${labelStyle.fontSizePx + 10}px`,
+      boxSizing: "border-box",
+      backgroundColor: "rgba(8, 10, 18, 0.68)",
+      border: "1px solid rgba(255, 255, 255, 0.16)",
+      borderRadius: "9999px",
+      lineHeight: 1,
+      boxShadow: "0 8px 24px rgba(0, 0, 0, 0.22)",
       color: labelStyle.color,
-      fontSize: labelStyle.fontSizePx,
+      fontSize: `${labelStyle.fontSizePx}px`,
       textAlign: labelStyle.align,
+      whiteSpace: "nowrap",
     } as const;
   }, [labelStyle]);
 
@@ -44,7 +56,7 @@ export default function EditableLabel({
 
   return (
     <span
-      className="inline-block rounded-full bg-black/30 backdrop-blur px-4 py-1 border border-white/10 cursor-text select-none"
+      className="cursor-text select-none px-4 py-1"
       style={pillStyle}
       role="button"
       tabIndex={0}
@@ -70,7 +82,9 @@ export default function EditableLabel({
           }}
           className="bg-transparent outline-none w-full placeholder:text-white/30"
           style={{
-            fontSize: labelStyle.fontSizePx,
+            width: "100%",
+            lineHeight: 1,
+            fontSize: `${labelStyle.fontSizePx}px`,
             color: labelStyle.color,
             textAlign: labelStyle.align,
           }}
@@ -81,4 +95,3 @@ export default function EditableLabel({
     </span>
   );
 }
-

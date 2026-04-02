@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
-import type { CSSProperties } from "react";
+import type { CSSProperties, RefObject } from "react";
 import type { EditorState, FitMode, SlotId, SlotTransform } from "@/lib/types";
 import { getThemeBackgroundStyle } from "@/lib/themes";
 import EditableLabel from "@/components/EditableLabel";
 
 type EditorCanvasProps = {
   editor: EditorState;
+  exportRootRef?: RefObject<HTMLDivElement | null>;
   onObjectFitComputed?: (slotId: SlotId, fit: FitMode) => void;
   onLabelTextCommitted?: (slotId: SlotId, nextText: string) => void;
   onTransformInteractionStart?: (slotId: SlotId) => void;
@@ -17,12 +18,21 @@ type EditorCanvasProps = {
 
 export default function EditorCanvas({
   editor,
+  exportRootRef,
   onObjectFitComputed,
   onLabelTextCommitted,
   onTransformInteractionStart,
   onTransformInteractionEnd,
   onTransformChange,
 }: EditorCanvasProps) {
+  const slotFrameStyle: CSSProperties = {
+    backgroundColor: "rgba(0, 0, 0, 0.2)",
+    border: "1px solid rgba(255, 255, 255, 0.1)",
+  };
+  const emptyStateStyle: CSSProperties = {
+    color: "rgba(255, 255, 255, 0.3)",
+  };
+
   const beforeSlotRef = useRef<HTMLDivElement | null>(null);
   const afterSlotRef = useRef<HTMLDivElement | null>(null);
 
@@ -52,6 +62,16 @@ export default function EditorCanvas({
       editor.theme.customBackgroundDataUrl
     ) as CSSProperties;
   }, [editor.theme.selectedThemeId, editor.theme.customBackgroundDataUrl]);
+  const canvasFrameStyle = useMemo(
+    () =>
+      ({
+        ...bgStyle,
+        border: "1px solid rgba(255, 255, 255, 0.1)",
+        color: "#ffffff",
+        fontFamily: '"Segoe UI", "Helvetica Neue", Arial, sans-serif',
+      }) as CSSProperties,
+    [bgStyle]
+  );
 
   const computeFit = (slotId: SlotId, img: HTMLImageElement) => {
     const slotEl = slotId === "before" ? beforeSlotRef.current : afterSlotRef.current;
@@ -78,7 +98,8 @@ export default function EditorCanvas({
 
     return (
       <div
-        className="flex-1 relative rounded-2xl overflow-hidden bg-black/20 border border-white/10 touch-none select-none"
+        className="flex-1 relative rounded-2xl overflow-hidden touch-none select-none"
+        style={slotFrameStyle}
         onPointerDown={(e) => {
           if (!slot.imageDataUrl) return;
           if (e.button !== 0 && e.pointerType === "mouse") return;
@@ -134,6 +155,8 @@ export default function EditorCanvas({
 
         <div className="absolute inset-0 overflow-hidden select-none">
           {slot.imageDataUrl ? (
+            // Data URLs and DOM export require a plain img element here.
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={slot.imageDataUrl}
               alt=""
@@ -149,13 +172,16 @@ export default function EditorCanvas({
               }}
             />
           ) : (
-            <div className="absolute inset-0 flex items-center justify-center text-white/30 text-sm">
+            <div
+              className="absolute inset-0 flex items-center justify-center text-sm"
+              style={emptyStateStyle}
+            >
               Upload {slotId === "before" ? "Before" : "After"} image
             </div>
           )}
         </div>
 
-        <div className="absolute left-0 right-0 bottom-0 px-4 pb-3" style={{ textAlign: label.align }}>
+        <div className="absolute left-0 right-0 bottom-0 px-4 pb-4" style={{ textAlign: label.align }}>
           <div data-editor-no-drag>
           <EditableLabel
             labelStyle={label}
@@ -170,8 +196,9 @@ export default function EditorCanvas({
 
   return (
     <div
-      className="w-full max-w-[520px] aspect-[4/5] rounded-3xl overflow-hidden border border-white/10"
-      style={bgStyle}
+      ref={exportRootRef}
+      className="w-full max-w-[520px] aspect-[4/5] rounded-3xl overflow-hidden"
+      style={canvasFrameStyle}
     >
       <div className="h-full p-6 flex flex-col gap-4">
         {renderSlot("before")}
@@ -180,4 +207,3 @@ export default function EditorCanvas({
     </div>
   );
 }
-

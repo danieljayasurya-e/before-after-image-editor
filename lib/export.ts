@@ -35,32 +35,24 @@ export async function exportElementAsImage(
 
   await waitForImages(root);
 
-  const html2canvasMod = await import("html2canvas");
-  const html2canvas = html2canvasMod.default;
-
-  const canvas = await html2canvas(root, {
-    // Ensure locked 4:5 output dimensions.
-    width,
-    height,
-    scale: 1,
-    backgroundColor: null,
-    useCORS: false,
-    allowTaint: false,
-  });
+  const rect = root.getBoundingClientRect();
+  const pixelRatio = Math.max(2, window.devicePixelRatio || 1);
+  const htmlToImage = await import("html-to-image");
 
   const mimeType = options.format === "png" ? "image/png" : "image/jpeg";
-
-  const blob: Blob = await new Promise((resolve, reject) => {
-    canvas.toBlob(
-      (b) => {
-        if (!b) return reject(new Error("Failed to create image blob."));
-        resolve(b);
-      },
-      mimeType,
-      options.format === "jpeg" ? jpegQuality : undefined
-    );
+  const blob = await htmlToImage.toBlob(root, {
+    cacheBust: true,
+    pixelRatio,
+    width: Math.round(rect.width),
+    height: Math.round(rect.height),
+    canvasWidth: width,
+    canvasHeight: height,
+    type: mimeType,
+    quality: options.format === "jpeg" ? jpegQuality : 1,
   });
 
+  if (!blob) {
+    throw new Error("Failed to generate export image.");
+  }
   return blob;
 }
-

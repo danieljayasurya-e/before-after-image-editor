@@ -25,6 +25,7 @@ export default function EditorPage() {
   const [past, setPast] = useState<EditorState[]>([]);
   const [future, setFuture] = useState<EditorState[]>([]);
   const [isExporting, setIsExporting] = useState(false);
+  const [exportPreviewUrl, setExportPreviewUrl] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const presentRef = useRef(present);
@@ -39,6 +40,12 @@ export default function EditorPage() {
     const t = window.setTimeout(() => setToastMessage(null), 3500);
     return () => window.clearTimeout(t);
   }, [toastMessage]);
+
+  useEffect(() => {
+    return () => {
+      if (exportPreviewUrl) URL.revokeObjectURL(exportPreviewUrl);
+    };
+  }, [exportPreviewUrl]);
 
   const canUndo = past.length > 0;
   const canRedo = future.length > 0;
@@ -122,69 +129,68 @@ export default function EditorPage() {
       <main className="flex-1 px-4 pb-10">
         <div className="mx-auto max-w-6xl grid grid-cols-1 lg:grid-cols-[1fr,360px] gap-8 items-start">
           <section className="flex flex-col items-center">
-            <div ref={canvasRef}>
-              <EditorCanvas
-                editor={present}
-                onObjectFitComputed={(slotId, fit) => {
-                  setPresent((prev) => {
-                    if (slotId === "before") {
-                      return {
-                        ...prev,
-                        before: {
-                          ...prev.before,
-                          transform: {
-                            ...prev.before.transform,
-                            objectFit: fit,
-                          },
-                        },
-                      };
-                    }
+            <EditorCanvas
+              editor={present}
+              exportRootRef={canvasRef}
+              onObjectFitComputed={(slotId, fit) => {
+                setPresent((prev) => {
+                  if (slotId === "before") {
                     return {
                       ...prev,
-                      after: {
-                        ...prev.after,
+                      before: {
+                        ...prev.before,
                         transform: {
-                          ...prev.after.transform,
+                          ...prev.before.transform,
                           objectFit: fit,
                         },
                       },
                     };
-                  });
-                }}
-                onLabelTextCommitted={(slotId, nextText) => {
-                  commit((prev) => ({
-                    ...prev,
-                    labels: {
-                      ...prev.labels,
-                      ...(slotId === "before"
-                        ? { before: { ...prev.labels.before, text: nextText } }
-                        : { after: { ...prev.labels.after, text: nextText } }),
-                    },
-                  }));
-                }}
-                onTransformInteractionStart={() => {
-                  if (!transformInteractionBaseRef.current) {
-                    transformInteractionBaseRef.current = cloneAny(presentRef.current);
                   }
-                }}
-                onTransformInteractionEnd={() => {
-                  const base = transformInteractionBaseRef.current;
-                  if (!base) return;
-                  transformInteractionBaseRef.current = null;
-                  setPast((p) => [...p, base].slice(-50));
-                  setFuture([]);
-                }}
-                onTransformChange={(slotId, nextTransform) => {
-                  setPresent((prev) => ({
+                  return {
                     ...prev,
-                    [slotId]: {
-                      ...prev[slotId],
-                      transform: nextTransform,
+                    after: {
+                      ...prev.after,
+                      transform: {
+                        ...prev.after.transform,
+                        objectFit: fit,
+                      },
                     },
-                  }));
-                }}
-              />
-            </div>
+                  };
+                });
+              }}
+              onLabelTextCommitted={(slotId, nextText) => {
+                commit((prev) => ({
+                  ...prev,
+                  labels: {
+                    ...prev.labels,
+                    ...(slotId === "before"
+                      ? { before: { ...prev.labels.before, text: nextText } }
+                      : { after: { ...prev.labels.after, text: nextText } }),
+                  },
+                }));
+              }}
+              onTransformInteractionStart={() => {
+                if (!transformInteractionBaseRef.current) {
+                  transformInteractionBaseRef.current = cloneAny(presentRef.current);
+                }
+              }}
+              onTransformInteractionEnd={() => {
+                const base = transformInteractionBaseRef.current;
+                if (!base) return;
+                transformInteractionBaseRef.current = null;
+                setPast((p) => [...p, base].slice(-50));
+                setFuture([]);
+              }}
+              onTransformChange={(slotId, nextTransform) => {
+                setPresent((prev) => ({
+                  ...prev,
+                  [slotId]: {
+                    ...prev[slotId],
+                    transform: nextTransform,
+                  },
+                }));
+              }}
+            />
           </section>
 
           <aside className="bg-white/5 border border-white/10 rounded-3xl p-4 w-full lg:w-auto lg:sticky lg:top-6">
@@ -221,16 +227,23 @@ export default function EditorPage() {
                       height: 1350,
                     });
 
+                    setExportPreviewUrl((prevUrl) => {
+                      if (prevUrl) URL.revokeObjectURL(prevUrl);
+                      return URL.createObjectURL(blob);
+                    });
+
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement("a");
                     a.href = url;
-                    a.download = `before-after-${format === "png" ? "png" : "jpg"}`;
+                    a.download = `before-after.${format === "png" ? "png" : "jpg"}`;
                     document.body.appendChild(a);
                     a.click();
                     a.remove();
-                    URL.revokeObjectURL(url);
-                  } catch {
-                    setToastMessage("Export failed. Please try again.");
+                    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+                  } catch (error) {
+                    const message =
+                      error instanceof Error ? error.message : "Please try again.";
+                    setToastMessage(`Export failed. ${message}`);
                   } finally {
                     setIsExporting(false);
                   }
@@ -448,4 +461,3 @@ export default function EditorPage() {
     </div>
   );
 }
-
