@@ -28,7 +28,6 @@ export default function ThemeSelector({
 }: ThemeSelectorProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [error, setError] = useState<string | null>(null);
-
   const acceptAttr = useMemo(() => "image/png,image/jpeg", []);
 
   const currentStyle = useMemo(() => {
@@ -48,7 +47,7 @@ export default function ThemeSelector({
     if (!files || files.length === 0) return;
     const file = files[0];
     if (!isValidBackgroundFile(file)) {
-      setError("Please upload a PNG or JPG background image.");
+      setError("Please upload a PNG or JPG image.");
       return;
     }
     try {
@@ -56,15 +55,13 @@ export default function ThemeSelector({
       onSelectTheme(CUSTOM_THEME_ID);
       onUploadCustomBackground(dataUrl);
     } catch {
-      setError("Could not read that background image. Please try again.");
+      setError("Could not read that image. Please try again.");
     }
   };
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
-      <div className="text-xs uppercase tracking-wider text-zinc-300 mb-2">
-        Background Theme
-      </div>
+    <div className="space-y-3">
+      <div className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 px-1">Background</div>
 
       <input
         ref={inputRef}
@@ -74,27 +71,27 @@ export default function ThemeSelector({
         onChange={(e) => onChooseCustom(e.target.files)}
       />
 
-      <div className="flex items-start gap-3">
-        <div className="w-14 h-14 rounded-xl border border-white/10 overflow-hidden flex-shrink-0" style={currentStyle} />
-
+      {/* Current theme preview + upload */}
+      <div className="flex items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.02] p-3">
+        <div
+          className="w-12 h-12 rounded-lg border border-white/10 overflow-hidden flex-shrink-0"
+          style={currentStyle}
+        />
         <div className="flex-1 min-w-0">
-          <div className="text-xs text-zinc-400 leading-relaxed">
-            Select a preset or upload a custom background image.
-          </div>
-
+          <div className="text-xs text-zinc-400 mb-2">Custom background</div>
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
-            className="mt-2 w-full rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 px-3 py-2 text-sm font-medium transition-colors"
+            className="w-full h-8 rounded-lg bg-white/8 hover:bg-white/12 border border-white/10 text-xs font-medium text-zinc-300 hover:text-zinc-100 transition-all"
           >
-            Upload custom image
+            Upload image
           </button>
-
-          {error ? <div className="mt-2 text-xs text-red-300">{error}</div> : null}
+          {error && <div className="mt-1.5 text-[11px] text-red-400">{error}</div>}
         </div>
       </div>
 
-      <div className="mt-3 grid grid-cols-4 gap-2 max-h-64 overflow-y-auto pr-1">
+      {/* Preset grid */}
+      <div className="grid grid-cols-4 gap-2">
         {[
           { id: CUSTOM_THEME_ID, name: "Custom" as const },
           ...BUILTIN_THEMES,
@@ -112,7 +109,7 @@ export default function ThemeSelector({
                   : ({
                       backgroundImage:
                         "linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.02))",
-                    } as ThemeBackground)) // placeholder when no custom uploaded
+                    } as ThemeBackground))
               : (BUILTIN_THEMES.find((theme) => theme.id === t.id)?.background ??
                   ({
                     backgroundImage:
@@ -127,8 +124,10 @@ export default function ThemeSelector({
               aria-pressed={isSelected}
               title={t.name}
               className={[
-                "w-full aspect-square rounded-xl border transition-all",
-                isSelected ? "border-white/70 ring-2 ring-white/20" : "border-white/10 hover:border-white/30",
+                "w-full aspect-square rounded-xl border-2 transition-all",
+                isSelected
+                  ? "border-violet-400 ring-2 ring-violet-400/20 scale-105"
+                  : "border-white/[0.07] hover:border-white/25 hover:scale-102",
               ].join(" ")}
               style={style}
             />
@@ -138,4 +137,3 @@ export default function ThemeSelector({
     </div>
   );
 }
-
