@@ -8,6 +8,10 @@ import EditableLabel from "@/components/EditableLabel";
 
 type EditorCanvasProps = {
   editor: EditorState;
+  viewportSize?: {
+    width: number;
+    height: number;
+  };
   exportRootRef?: RefObject<HTMLDivElement | null>;
   onObjectFitComputed?: (slotId: SlotId, fit: FitMode) => void;
   onLabelTextCommitted?: (slotId: SlotId, nextText: string) => void;
@@ -18,6 +22,7 @@ type EditorCanvasProps = {
 
 export default function EditorCanvas({
   editor,
+  viewportSize,
   exportRootRef,
   onObjectFitComputed,
   onLabelTextCommitted,
@@ -72,6 +77,28 @@ export default function EditorCanvas({
       }) as CSSProperties,
     [bgStyle]
   );
+  const fittedCanvasStyle = useMemo(() => {
+    const aspectRatio = 4 / 5;
+    const fallbackWidth = 520;
+    const maxWidth = viewportSize?.width ?? fallbackWidth;
+    const maxHeight = viewportSize?.height ?? fallbackWidth / aspectRatio;
+
+    if (!maxWidth || !maxHeight) {
+      return {
+        width: fallbackWidth,
+        height: fallbackWidth / aspectRatio,
+      } satisfies CSSProperties;
+    }
+
+    const width = Math.min(maxWidth, maxHeight * aspectRatio);
+
+    return {
+      width,
+      height: width / aspectRatio,
+      maxWidth: "100%",
+      maxHeight: "100%",
+    } satisfies CSSProperties;
+  }, [viewportSize]);
 
   const computeFit = (slotId: SlotId, img: HTMLImageElement) => {
     const slotEl = slotId === "before" ? beforeSlotRef.current : afterSlotRef.current;
@@ -197,8 +224,8 @@ export default function EditorCanvas({
   return (
     <div
       ref={exportRootRef}
-      className="w-full max-w-[520px] aspect-[4/5] rounded-3xl overflow-hidden"
-      style={canvasFrameStyle}
+      className="rounded-3xl overflow-hidden flex-shrink-0"
+      style={{ ...canvasFrameStyle, ...fittedCanvasStyle }}
     >
       <div className="h-full p-6 flex flex-col gap-4">
         {renderSlot("before")}

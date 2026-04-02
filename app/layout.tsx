@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Before-After Image Editor",
-  description: "Upload, preview, edit, and export before-after image layouts.",
+  title: "SplitFrame",
+  description: "Build polished before-and-after image layouts for social posts in seconds.",
 };
 
 export default function RootLayout({
