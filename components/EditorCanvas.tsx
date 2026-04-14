@@ -224,7 +224,7 @@ export default function EditorCanvas({
   return (
     <div
       ref={exportRootRef}
-      className="rounded-3xl overflow-hidden flex-shrink-0"
+      className="overflow-hidden flex-shrink-0"
       style={{ ...canvasFrameStyle, ...fittedCanvasStyle }}
     >
       <div className="h-full p-6 flex flex-col gap-4">
